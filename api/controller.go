@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	dmv "github.com/carlwilk32/dmv-service-gin/client"
 	"math"
@@ -8,6 +9,8 @@ import (
 	"sort"
 	"strconv"
 )
+
+const limit = 9
 
 // todo just a sample implementqtion for now
 func ByDistance(w http.ResponseWriter, r *http.Request) {
@@ -33,23 +36,29 @@ func ByDistance(w http.ResponseWriter, r *http.Request) {
 	}
 	sort.Ints(keys)
 
-	for i := range 10 {
+	response := [limit]Response{}
+	for i := range limit {
 		k := keys[i]
-		fmt.Println(i+1, "->", k, "Miles from", officeByDistance[k])
+		it := Response{k, officeByDistance[k].String()}
+		response[i] = it
+		fmt.Println(it)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	//err := json.NewEncoder(w).Encode(offices[0]) //write one
-	//if err != nil {
-	//	panic(err)
-	//}
+	err := json.NewEncoder(w).Encode(response)
+	if err != nil {
+		panic(err)
+	}
 }
 
-type OfficeResponse struct {
-	id      string
-	IdShort string `json:"id"`
-	Name    string `json:"name"`
+type Response struct {
+	Distance int    `json:"distance"`
+	Name     string `json:"name"`
+}
+
+func (r Response) String() string {
+	return fmt.Sprintf("%v Miles --> %v", r.Distance, r.Name)
 }
 
 func getDistanceToOffice(latStr, lonStr string, office dmv.FieldOffice) int {
