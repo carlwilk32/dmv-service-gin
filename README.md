@@ -18,7 +18,7 @@ go run .
 Provide target latitude | longitude as input parameters, f.e.
 
 ```shell
-curl -X GET http://localhost:8080/test?lat=33.9911214&lon=-118.4279929
+curl -X GET http://localhost:8080/distance?lat=33.9911214&lon=-118.4279929
 ```
 
 ## TODOs
