@@ -12,16 +12,22 @@ import (
 
 const limit = 9
 
-// todo just a sample implementqtion for now
 func ByDistance(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	latStr := query.Get("lat")
 	lonStr := query.Get("lon")
 	if len(latStr) == 0 || len(lonStr) == 0 {
-		panic("empty lat, lon")
+		http.Error(w, "Latitude and Longitude should present", http.StatusBadRequest)
+		return
 	}
 
-	offices := dmv.GetFieldOffices("")
+	offices, err := dmv.GetFieldOffices("")
+	if err != nil {
+		fmt.Printf("DMV client failed to execute call.")
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
 	officeByDistance := make(map[int]dmv.FieldOffice)
 	for i := range offices {
 		it := offices[i]
@@ -41,14 +47,15 @@ func ByDistance(w http.ResponseWriter, r *http.Request) {
 		k := keys[i]
 		it := Response{k, officeByDistance[k].String()}
 		response[i] = it
-		fmt.Println(it)
+		//fmt.Println(it)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	err := json.NewEncoder(w).Encode(response)
+	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		panic(err)
+		http.Error(w, err.Error(), 500)
+		return
 	}
 }
 

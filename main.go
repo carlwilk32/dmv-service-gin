@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	http.HandleFunc("/test", api.ByDistance)
+	http.HandleFunc("/distance", api.ByDistance)
 
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
