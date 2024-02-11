@@ -13,8 +13,10 @@ func fetchDmvData[T any](req *http.Request, model *T) error {
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
+
+	// todo DMV always return 200 :E
 	if err != nil || resp.StatusCode != http.StatusOK {
-		panic(err)
+		return err
 	}
 	defer resp.Body.Close()
 
