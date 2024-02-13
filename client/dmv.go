@@ -11,7 +11,7 @@ func fetchDmvData[T any](req *http.Request, model *T) error {
 	req.Header.Set("user-agent", "curl/8.1.2")
 	req.Header.Set("accept", "application/json")
 
-	client := &http.Client{}
+	client := NewRetryableClient()
 	resp, err := client.Do(req)
 
 	// todo DMV always return 200 :E
@@ -24,7 +24,10 @@ func fetchDmvData[T any](req *http.Request, model *T) error {
 }
 
 func GetFieldOffices(query string) (offices []FieldOffice, err error) {
-	req, _ := http.NewRequest("GET", "https://www.dmv.ca.gov/portal/wp-json/dmv/v1/field-offices", nil)
+	req, err := http.NewRequest("GET", "https://www.dmv.ca.gov/portal/wp-json/dmv/v1/field-offices", nil)
+	if err != nil {
+		return nil, err
+	}
 
 	if len(query) > 0 {
 		q := req.URL.Query()
@@ -37,13 +40,20 @@ func GetFieldOffices(query string) (offices []FieldOffice, err error) {
 }
 
 func GetServices() (services []DmvService, err error) {
-	req, _ := http.NewRequest("GET", "https://www.dmv.ca.gov/portal/wp-json/dmv/v1/appointment/services", nil)
+	req, err := http.NewRequest("GET", "https://www.dmv.ca.gov/portal/wp-json/dmv/v1/appointment/services", nil)
+	if err != nil {
+		return nil, err
+	}
+
 	err = fetchDmvData(req, &services)
 	return
 }
 
 func GetAvailable(service DmvService) (availabilityList []Availability, err error) {
-	req, _ := http.NewRequest("GET", "https://www.dmv.ca.gov/portal/wp-json/dmv/v1/appointment/available", nil)
+	req, err := http.NewRequest("GET", "https://www.dmv.ca.gov/portal/wp-json/dmv/v1/appointment/available", nil)
+	if err != nil {
+		return nil, err
+	}
 
 	q := req.URL.Query()
 	q.Add("services[]", service.PublicID)
@@ -56,7 +66,10 @@ func GetAvailable(service DmvService) (availabilityList []Availability, err erro
 // GetDates ["2024-02-16T00:00:00", "2024-03-22T00:00:00"]
 func GetDates(service DmvService, office FieldOffice) (dates []string, err error) {
 	url := fmt.Sprintf("https://www.dmv.ca.gov/portal/wp-json/dmv/v1/appointment/branches/%s/dates", office.Meta.PublicID)
-	req, _ := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
 
 	q := req.URL.Query()
 	q.Add("services[]", service.PublicID)
@@ -70,7 +83,10 @@ func GetDates(service DmvService, office FieldOffice) (dates []string, err error
 // GetTimes 24h format, f.e. ["10:20","11:00","11:20","13:40","14:20","14:40","15:20","15:40"]
 func GetTimes(service DmvService, office FieldOffice, date string) (times []string, err error) {
 	url := fmt.Sprintf("https://www.dmv.ca.gov/portal/wp-json/dmv/v1/appointment/branches/%s/times", office.Meta.PublicID)
-	req, _ := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
 
 	q := req.URL.Query()
 	q.Add("services[]", service.PublicID)
@@ -82,21 +98,33 @@ func GetTimes(service DmvService, office FieldOffice, date string) (times []stri
 }
 
 func GetBranches() (branches []Branch, err error) {
-	req, _ := http.NewRequest("GET", "https://www.dmv.ca.gov/portal/wp-json/dmv/v1/appointment/branches", nil)
+	req, err := http.NewRequest("GET", "https://www.dmv.ca.gov/portal/wp-json/dmv/v1/appointment/branches", nil)
+	if err != nil {
+		return nil, err
+	}
+
 	err = fetchDmvData(req, &branches)
 	return
 }
 
-func GetAuthCheck() (auth AuthCheck, err error) {
-	req, _ := http.NewRequest("GET", "https://www.dmv.ca.gov/portal/wp-json/dmv/v1/auth-check", nil)
+func GetAuthCheck() (auth *AuthCheck, err error) {
+	req, err := http.NewRequest("GET", "https://www.dmv.ca.gov/portal/wp-json/dmv/v1/auth-check", nil)
+	if err != nil {
+		return nil, err
+	}
+
 	err = fetchDmvData(req, &auth)
 	return
 }
 
-func PostAppointment(appointment Appointment) (response AppointmentResponse, err error) {
+func PostAppointment(appointment Appointment) (response *AppointmentResponse, err error) {
 	body, err := json.Marshal(appointment)
 
-	req, _ := http.NewRequest("POST", "https://www.dmv.ca.gov/portal/wp-json/dmv/v1/appointment/hold-appointment", bytes.NewBuffer(body))
+	req, err := http.NewRequest("POST", "https://www.dmv.ca.gov/portal/wp-json/dmv/v1/appointment/hold-appointment", bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+
 	req.Header.Set("content-type", "application/json")
 
 	err = fetchDmvData(req, &response)

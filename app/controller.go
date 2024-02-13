@@ -31,7 +31,12 @@ func ByDistance(w http.ResponseWriter, r *http.Request) {
 	officeByDistance := make(map[int]dmv.FieldOffice)
 	for i := range offices {
 		it := offices[i]
-		distance := getDistanceToOffice(latStr, lonStr, it)
+		distance, err := getDistanceToOffice(latStr, lonStr, it)
+		if err != nil {
+			fmt.Printf("Unable to parse params.")
+			http.Error(w, err.Error(), 500)
+			return
+		}
 		officeByDistance[distance] = it
 	}
 
@@ -68,11 +73,18 @@ func (r Response) String() string {
 	return fmt.Sprintf("%v Miles --> %v", r.Distance, r.Name)
 }
 
-func getDistanceToOffice(latStr, lonStr string, office dmv.FieldOffice) int {
-	fLat, _ := strconv.ParseFloat(latStr, 64)
-	fLon, _ := strconv.ParseFloat(lonStr, 64)
+func getDistanceToOffice(latStr, lonStr string, office dmv.FieldOffice) (int, error) {
+	fLat, err := strconv.ParseFloat(latStr, 64)
+	if err != nil {
+		return -1, err
+	}
+	fLon, err := strconv.ParseFloat(lonStr, 64)
+	if err != nil {
+		return -1, err
+	}
+
 	oLat, oLon := office.LatLon()
-	return int(calcDistance(degToRad(fLat), degToRad(fLon), degToRad(oLat), degToRad(oLon)))
+	return int(calcDistance(degToRad(fLat), degToRad(fLon), degToRad(oLat), degToRad(oLon))), nil
 }
 
 func calcDistance(lat1, lon1, lat2, lon2 float64) float64 {

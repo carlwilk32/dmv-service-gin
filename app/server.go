@@ -2,7 +2,7 @@ package app
 
 import "net/http"
 
-func Server() http.Handler {
+func NewServer() http.Handler {
 	mux := http.NewServeMux()
 	addRoutes(mux)
 	var handler http.Handler = mux

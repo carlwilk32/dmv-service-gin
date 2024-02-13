@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	err := http.ListenAndServe(":8080", app.Server())
+	err := http.ListenAndServe(":8080", app.NewServer())
 	if err != nil {
 		log.Fatal("ListenAndServe:", err)
 	}
